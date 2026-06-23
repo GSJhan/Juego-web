@@ -2,7 +2,21 @@
 // La configuración se carga desde firebase-config.js
 // Las referencias a auth y db ya están disponibles globalmente
 
-console.log('✅ Firebase inicializado correctamente');
+// Esperar a que Firebase esté completamente listo
+function waitForFirebase(callback, attempts = 0) {
+    if (typeof db !== 'undefined') {
+        console.log('✅ Firebase inicializado correctamente');
+        callback();
+    } else if (attempts < 50) {
+        setTimeout(() => waitForFirebase(callback, attempts + 1), 100);
+    } else {
+        console.error('❌ Error: Firebase no se inicializó en el tiempo esperado');
+    }
+}
+
+waitForFirebase(() => {
+    console.log('✅ Sistema listo para usar');
+});
 
 // ========== DATOS DEL JUEGO ==========
 const gameData = {
@@ -85,9 +99,9 @@ async function registerUser() {
 
     try {
         // Validar que Firebase esté inicializado
-        if (!db) {
+        if (typeof db === 'undefined') {
             showError('Firebase no está configurado correctamente. Verifica firebase-config.js');
-            console.error('Firebase no inicializado:', { db });
+            console.error('Firebase no inicializado');
             return;
         }
 
@@ -141,9 +155,9 @@ async function loginUser() {
 
     try {
         // Validar que Firebase esté inicializado
-        if (!db) {
+        if (typeof db === 'undefined') {
             showError('Firebase no está configurado correctamente. Verifica firebase-config.js');
-            console.error('Firebase no inicializado:', { db });
+            console.error('Firebase no inicializado');
             return;
         }
 
@@ -205,6 +219,11 @@ async function loadUserData() {
     if (!currentUser) return;
 
     try {
+        if (typeof db === 'undefined') {
+            console.error('Firebase no está disponible');
+            return;
+        }
+
         const userRef = db.collection('users').doc(currentUser.username);
         const userSnap = await userRef.get();
         
@@ -226,6 +245,11 @@ async function updateUserData() {
     if (!currentUser) return;
 
     try {
+        if (typeof db === 'undefined') {
+            console.error('Firebase no está disponible');
+            return;
+        }
+
         await db.collection('users').doc(currentUser.username).update({
             soles: currentUser.soles,
             rank: currentUser.rank,
@@ -238,6 +262,11 @@ async function updateUserData() {
 
 async function loadLeaderboard() {
     try {
+        if (typeof db === 'undefined') {
+            console.error('Firebase no está disponible');
+            return;
+        }
+
         const snapshot = await db.collection('users')
             .orderBy('soles', 'desc')
             .limit(10)
