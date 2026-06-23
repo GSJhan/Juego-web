@@ -1,19 +1,6 @@
 // ========== INICIALIZAR FIREBASE ==========
-const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "tu-proyecto.firebaseapp.com",
-    projectId: "tu-proyecto",
-    storageBucket: "tu-proyecto.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef123456"
-};
-
-// Inicializar Firebase
-firebase.initializeApp(firebaseConfig);
-
-// Obtener referencias después de inicializar
-const auth = firebase.auth();
-const db = firebase.firestore();
+// La configuración se carga desde firebase-config.js
+// Las referencias a auth y db ya están disponibles globalmente
 
 console.log('✅ Firebase inicializado correctamente');
 
@@ -59,6 +46,8 @@ function toggleForm(event) {
     event.preventDefault();
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.style.display = 'none'; // Limpiar errores previos
     
     if (loginForm.style.display === 'none') {
         loginForm.style.display = 'block';
@@ -79,6 +68,11 @@ async function registerUser() {
         return;
     }
 
+    if (username.length < 3) {
+        showError('El usuario debe tener al menos 3 caracteres');
+        return;
+    }
+
     if (password.length < 4) {
         showError('La contraseña debe tener al menos 4 caracteres');
         return;
@@ -90,9 +84,19 @@ async function registerUser() {
     }
 
     try {
+        // Validar que Firebase esté inicializado
+        if (!auth || !db) {
+            showError('Firebase no está configurado correctamente. Verifica firebase-config.js');
+            console.error('Firebase no inicializado:', { auth, db });
+            return;
+        }
+
         const email = `${username}@prepol.local`;
+        console.log('Intentando registrar usuario:', email);
+        
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
+        console.log('Usuario registrado:', user.uid);
 
         await db.collection('users').doc(user.uid).set({
             username: username,
@@ -101,13 +105,26 @@ async function registerUser() {
             completedLevels: [],
             createdAt: new Date().toISOString()
         });
+        console.log('Datos de usuario guardados en Firestore');
 
         currentUser = { uid: user.uid, username: username };
         loadUserData();
         showPage('dashboardPage');
     } catch (error) {
         console.error('Error al registrar:', error);
-        showError('Error al registrar: ' + error.message);
+        let errorMessage = 'Error al registrar';
+        
+        if (error.code === 'auth/email-already-in-use') {
+            errorMessage = 'Este usuario ya existe';
+        } else if (error.code === 'auth/weak-password') {
+            errorMessage = 'La contraseña es muy débil';
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessage = 'Email inválido';
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
+        showError(errorMessage);
     }
 }
 
@@ -121,16 +138,38 @@ async function loginUser() {
     }
 
     try {
+        // Validar que Firebase esté inicializado
+        if (!auth || !db) {
+            showError('Firebase no está configurado correctamente. Verifica firebase-config.js');
+            console.error('Firebase no inicializado:', { auth, db });
+            return;
+        }
+
         const email = `${username}@prepol.local`;
+        console.log('Intentando iniciar sesión:', email);
+        
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
         const user = userCredential.user;
+        console.log('Sesión iniciada:', user.uid);
 
         currentUser = { uid: user.uid, username: username };
         loadUserData();
         showPage('dashboardPage');
     } catch (error) {
         console.error('Error al ingresar:', error);
-        showError('Usuario o contraseña incorrectos');
+        let errorMessage = 'Usuario o contraseña incorrectos';
+        
+        if (error.code === 'auth/user-not-found') {
+            errorMessage = 'Usuario no encontrado. ¿Quizás no estés registrado?';
+        } else if (error.code === 'auth/wrong-password') {
+            errorMessage = 'Contraseña incorrecta';
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessage = 'Email inválido';
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
+        showError(errorMessage);
     }
 }
 
@@ -258,9 +297,10 @@ function showError(message) {
     const errorDiv = document.getElementById('errorMessage');
     errorDiv.textContent = message;
     errorDiv.style.display = 'block';
+    console.error('Error mostrado:', message);
     setTimeout(() => {
         errorDiv.style.display = 'none';
-    }, 3000);
+    }, 5000);
 }
 
 // ========== FUNCIONES DEL JUEGO ==========
