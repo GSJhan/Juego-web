@@ -1,4 +1,4 @@
-/* ========== VARIABLES ========== */
+/* ========== variable========== */
 :root {
     --primary: #667eea;
     --secondary: #764ba2;
@@ -14,7 +14,7 @@
     --gray-light: #e5e7eb;
 }
 
-/* ========== RESET ========== */
+/* ========== refrescar ========== */
 * {
     margin: 0;
     padding: 0;
@@ -32,7 +32,7 @@ body {
     min-height: 100vh;
 }
 
-/* ========== LOGIN PAGE ========== */
+/* ========== pagina para logearse ========== */
 .login-container {
     display: flex;
     align-items: center;
@@ -273,7 +273,7 @@ body {
     backdrop-filter: blur(10px);
 }
 
-/* ========== DASHBOARD ========== */
+/* ========== dashboard ========== */
 .dashboard-container {
     display: flex;
     min-height: 100vh;
@@ -335,7 +335,7 @@ body {
     box-shadow: 0 10px 25px rgba(240, 147, 251, 0.5);
 }
 
-/* ========== MAIN CONTENT ========== */
+/* ========== el contenido ========== */
 .main-content {
     flex: 1;
     padding: 30px;
@@ -396,7 +396,7 @@ body {
     align-items: center;
 }
 
-/* ========== MUNDOS Y NIVELES ========== */
+/* ========== los mundos y niveles ========== */
 .mundos-container {
     display: flex;
     flex-direction: column;
@@ -529,29 +529,38 @@ body {
     border-radius: 20px;
 }
 
-/* ========== QUIZ PAGE ========== */
+/* ========== para la pagina de pregutas ========== */
 .quiz-container {
-    max-width: 900px;
-    margin: 0 auto;
+    width: 100%;
+    height: 100vh;
     padding: 30px;
-    min-height: 100vh;
     background-image: url('../assets/images/preguntas.png');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
     background-repeat: no-repeat;
-    position: relative;
-}
-
-.quiz-container::before {
-    content: '';
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    overflow-y: auto;
+}
+
+.quiz-container::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.15);
     z-index: 0;
+    pointer-events: none;
 }
 
 .quiz-container > * {
@@ -693,7 +702,7 @@ body {
     box-shadow: 0 0 20px rgba(245, 87, 108, 0.6);
 }
 
-/* ========== REWARD PAGE ========== */
+/* ========== pagina de recompensa ========== */
 .reward-container {
     display: flex;
     align-items: center;
@@ -878,7 +887,7 @@ body {
     font-size: 1.5rem;
 }
 
-/* ========== LEADERBOARD PAGE ========== */
+/* ========== pagina de clasificacion ========== */
 .leaderboard-container {
     max-width: 800px;
     margin: 0 auto;
@@ -988,7 +997,7 @@ body {
     color: white;
 }
 
-/* ========== RESPONSIVE ========== */
+/* ========== sensibilidad ========== */
 @media (max-width: 768px) {
     .dashboard-container {
         flex-direction: column;
