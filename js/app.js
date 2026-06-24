@@ -262,6 +262,16 @@ function startFirebaseSync() {
             // Sincronizar vidas y cooldowns
             currentUser.lives = (data.lives !== undefined) ? data.lives : 3;
             levelCooldowns = data.levelCooldowns || {};
+
+            // Si se recuperaron vidas externamente, limpiar cooldowns de niveles
+            if (currentUser.lives > 0) {
+                let changed = false;
+                for (let key in levelCooldowns) {
+                    delete levelCooldowns[key];
+                    changed = true;
+                }
+                if (changed) saveToFirebase();
+            }
             
             // Actualizar UI inmediatamente
             updateUI();
@@ -312,16 +322,13 @@ function updateLevelStates() {
         // Reiniciar clases primero
         card.classList.remove('locked', 'completed');
 
-        // Lógica de bloqueo
-        if (currentUser.lives <= 0) {
+        // Lógica de bloqueo (Corregida: No bloquear visualmente por vidas 0)
+        const isCooldown = levelCooldowns[i] && levelCooldowns[i] > Date.now();
+        const isUnlocked = i === 0 || currentUser.completedLevels.includes(i - 1);
+        
+        if (isCooldown) {
             card.classList.add('locked');
-        } else if (levelCooldowns[i] && levelCooldowns[i] > Date.now()) {
-            card.classList.add('locked');
-        } else if (i === 0) {
-            // Nivel 1 siempre disponible si hay vidas
-        } else if (currentUser.completedLevels.includes(i - 1)) {
-            // Nivel disponible si el anterior está completado
-        } else {
+        } else if (!isUnlocked) {
             card.classList.add('locked');
         }
 
@@ -352,11 +359,13 @@ function updateCooldownDisplays() {
             if (!closestTime || remaining < closestTime) closestTime = remaining;
         } else {
             cooldownDiv.style.display = 'none';
-            // Solo remover locked si el usuario tiene vidas
-            if (currentUser && currentUser.lives > 0) {
-                card.classList.remove('locked');
-            } else {
-                card.classList.add('locked');
+            
+            // Sincronización de Castigos: Si el cooldown terminó y las vidas eran 0, recuperarlas
+            if (currentUser && currentUser.lives <= 0 && levelCooldowns[i]) {
+                delete levelCooldowns[i];
+                currentUser.lives = 3;
+                saveToFirebase();
+                updateUI();
             }
         }
     }
@@ -448,7 +457,8 @@ function showSuccess(message) {
 // ========== GAME ==========
 function startLevel(levelId) {
     if (currentUser.lives <= 0) {
-        showError('❌ No tienes vidas. Espera a que el temporizador termine.');
+        // Interceptor de Clic: Mensaje específico solicitado
+        showError('❤️ No cuentas con vidas suficientes para jugar');
         return;
     }
 
@@ -566,7 +576,9 @@ async function finishLevel(success = correctAnswers >= 4) {
 
 function backToDashboard() {
     if (cooldownUpdater) clearInterval(cooldownUpdater);
-    if (firebaseSyncTimer) clearInterval(firebaseSyncTimer);
+    // firebaseSyncTimer es un unsubscribe de onSnapshot, no un intervalo
+    if (firebaseSyncTimer && typeof firebaseSyncTimer === 'function') firebaseSyncTimer();
+    
     loadUserDataFromFirebase();
     showPage('dashboardPage');
     startFirebaseSync();
